@@ -92,10 +92,13 @@
     .status-row .size-label { margin-right: 2px; }
     .card-icon { width: 37px; height: 37px; flex: 0 0 37px; border-radius: 9px; background: var(--stag-url) center / contain no-repeat; opacity: .86; }
     .beetle-name { font-size: 25px; line-height: 1.38; font-weight: 850; letter-spacing: .01em; margin: 15px 0 13px; overflow-wrap: anywhere; }
-    .size-line { display: flex; align-items: baseline; gap: 7px; padding-bottom: 16px; border-bottom: 1px solid #2b3d33; }
+    .size-line { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; padding-bottom: 16px; border-bottom: 1px solid #2b3d33; }
+    .measure-item { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .measure-value { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; }
     .size-label { color: #a4b4a7; font-size: 11px; font-weight: 650; }
-    .size-number { font-size: 27px; font-weight: 850; font-variant-numeric: tabular-nums; letter-spacing: -.025em; }
+    .size-number { font-size: clamp(20px,2.5vw,27px); font-weight: 850; font-variant-numeric: tabular-nums; letter-spacing: -.025em; }
     .size-unit { color: #a0b09f; font-size: 13px; font-weight: 700; }
+    .weight-number { color: #d5edbd; }
     .stats { display: grid; gap: 15px; margin: 17px 0 17px; }
     .stat-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 10px; }
     .stat-title { color: #dce7d8; display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; overflow: hidden; }
@@ -272,7 +275,42 @@
         <div class="search"><span class="search-symbol" aria-hidden="true">⌕</span><input class="field-control" type="search" id="search" placeholder="名前・種類・備考で検索" aria-label="名前・種類・備考で検索" /></div>
         <select class="field-control" id="speciesFilter" aria-label="種類で絞り込む"><option value="">すべての種類</option></select>
         <select class="field-control" id="statusFilter" aria-label="状態で絞り込む"><option value="">すべての状態</option><option value="現役">現役</option><option value="引退">引退</option><option value="旅立ち">旅立ち</option></select>
-        <select class="field-control" id="sort" aria-label="並べ替え"><option value="strength">強さ順（高い順）</option><option value="strengthAsc">強さ順（低い順）</option><option value="newest">登録が新しい順</option><option value="size">サイズが大きい順</option><option value="rating">3能力の合計が高い順</option><option value="name">名前順</option></select>
+        <select class="field-control" id="sort" aria-label="並べ替え">
+          <optgroup label="総合的な強さ・3つの能力">
+            <option value="strength">★ 総合的な強さ：高い順</option>
+            <option value="strengthAsc">★ 総合的な強さ：低い順</option>
+            <option value="power">💪🏻 パワー：高い順</option>
+            <option value="powerAsc">💪🏻 パワー：低い順</option>
+            <option value="technique">🏓 テクニック：高い順</option>
+            <option value="techniqueAsc">🏓 テクニック：低い順</option>
+            <option value="mental">🫀 メンタル：高い順</option>
+            <option value="mentalAsc">🫀 メンタル：低い順</option>
+            <option value="rating">3能力の合計：高い順</option>
+            <option value="ratingAsc">3能力の合計：低い順</option>
+          </optgroup>
+          <optgroup label="計測値">
+            <option value="size">サイズ：大きい順</option>
+            <option value="sizeAsc">サイズ：小さい順</option>
+            <option value="weight">体重：重い順</option>
+            <option value="weightAsc">体重：軽い順</option>
+          </optgroup>
+          <optgroup label="個体情報（文字・状態）">
+            <option value="name">名前：あいうえお順</option>
+            <option value="nameDesc">名前：逆順</option>
+            <option value="species">種類：あいうえお順</option>
+            <option value="speciesDesc">種類：逆順</option>
+            <option value="status">状態：現役 → 引退 → 旅立ち</option>
+            <option value="statusDesc">状態：旅立ち → 引退 → 現役</option>
+            <option value="notes">備考：文字順</option>
+            <option value="notesDesc">備考：文字の逆順</option>
+          </optgroup>
+          <optgroup label="日時">
+            <option value="newest">登録日：新しい順</option>
+            <option value="oldest">登録日：古い順</option>
+            <option value="updatedNewest">更新日：新しい順</option>
+            <option value="updatedOldest">更新日：古い順</option>
+          </optgroup>
+        </select>
         <span class="result-hint" id="resultHint" aria-live="polite"></span>
       </div>
       <div id="cards" class="grid" aria-live="polite"></div>
@@ -301,8 +339,9 @@
     <form class="dialog-body" id="recordForm">
       <div class="form-grid">
         <div class="field full"><label for="speciesInput">種類 <span aria-hidden="true" style="color:#a9df78">*</span></label><input class="field-control" id="speciesInput" name="species" required maxlength="100" placeholder="例：オオクワガタ" list="speciesOptions" autocomplete="off" /><datalist id="speciesOptions"></datalist></div>
-        <div class="field"><label for="nameInput">名前</label><input class="field-control" id="nameInput" name="name" maxlength="100" placeholder="例：クロ" /></div>
+        <div class="field full"><label for="nameInput">名前</label><input class="field-control" id="nameInput" name="name" maxlength="100" placeholder="例：クロ" /></div>
         <div class="field"><label for="sizeInput">サイズ（mm）</label><input class="field-control" id="sizeInput" name="size" type="number" inputmode="decimal" step="0.1" min="0.1" max="999.9" placeholder="例：78.5" /></div>
+        <div class="field"><label for="weightInput">体重（g）</label><input class="field-control" id="weightInput" name="weight" type="number" inputmode="decimal" step="0.01" min="0" max="999.99" placeholder="例：2.35" /><small>0.01g単位・未計測なら空欄</small></div>
         <div class="field full"><label for="statusInput">状態</label><select class="field-control" id="statusInput" name="status" required><option value="現役">現役</option><option value="引退">引退</option><option value="旅立ち">旅立ち</option></select><small>各個体の現在の状態を選んでください。あとから変更できます。</small></div>
         <div class="field full"><label for="notesInput">備考</label><textarea class="field-control" id="notesInput" name="notes" maxlength="3000" placeholder="性格、特徴、採集日、産地、飼育メモなど"></textarea></div>
       </div>
@@ -334,11 +373,11 @@
         <h3>トレーナー名を設定する</h3>
       <p>画面左上の「トレーナー名（未登録）」を押すと、図鑑全体で1つだけ名前を登録・変更できます。常に上部に表示され、一覧画像にも入ります。個体ごとの名前とは別の設定です。</p>
       <h3>① クワガタを登録する</h3>
-        <p>画面上部の「＋」を押して、種類・名前・サイズ・状態（現役／引退／旅立ち）・備考と4つの評価を入力して「登録する」。総合的な強さは、ほかの3能力とは別に1〜10で設定できます。状態はあとから「編集」で変更できます。</p>
+        <p>画面上部の「＋」を押して、種類・名前・サイズ・体重・状態（現役／引退／旅立ち）・備考と4つの評価を入力して「登録する」。体重は0.01g単位で記録でき、表示は2.35gのように小数点以下2桁です。未計測なら空欄で登録できます。総合的な強さは、ほかの3能力とは別に1〜10で設定できます。状態はあとから「編集」で変更できます。</p>
       <h3>② 登録した情報を見る・変更する</h3>
-        <p>個体一覧を見たり、名前で検索したり、強さ順に並べ替えたり、状態（現役／引退／旅立ち）で絞り込んだりできます。登録後に「編集」「削除」もできます。</p>
+        <p>個体一覧を見たり、名前で検索したりできます。「並べ替え」から、総合的な強さ・パワー・テクニック・メンタル・能力合計・サイズ・体重などを高い順／低い順に切り替えられます。文字や状態、登録日・更新日も正順／逆順を選べます。登録後に「編集」「削除」もできます。</p>
       <h3>③ 一覧画像を作って送る</h3>
-      <p>「全個体を画像保存」を押すと、強さ順のPNG画像を作成します。「このPNG画像を保存」または画像長押しで保存し、LINEなどで送れます。枚数が複数になった場合は各ページを保存してください。</p>
+      <p>「全個体を画像保存」を押すと、体重を含む全情報を強さ順に1ページ最大5匹ずつPNG画像にします。「このPNG画像を保存」または画像長押しで保存し、LINEなどで送れます。複数枚になった場合は各ページを保存してください。</p>
       <h3>④ バックアップを保存する（重要）</h3>
       <p>画面下の「↓ バックアップ」でJSONファイルを保存してください。これは個体を編集できる状態で保管するためのものです。別の端末や新しいファイルでは「↑ 復元」からJSONファイルを選びます。復元するとその端末の現在のデータが置き換わります。</p>
       <p>以前のバージョンから読み込んだ個体は、最初は「現役」として表示します。必要に応じて「編集」で「引退」「旅立ち」に変更してください。</p>
@@ -393,6 +432,7 @@
         species: String(r?.species || '').trim().slice(0, 100),
         name: String(r?.name || '').trim().slice(0, 100),
         size: r?.size === null || r?.size === '' || r?.size === undefined ? null : (Number.isFinite(Number(r.size)) && Number(r.size) > 0 && Number(r.size) <= 999.9 ? Number(r.size) : null),
+        weight: r?.weight === null || r?.weight === '' || r?.weight === undefined ? null : (Number.isFinite(Number(r.weight)) && Number(r.weight) >= 0 && Number(r.weight) <= 999.99 ? Math.round(Number(r.weight)*100)/100 : null),
         notes: String(r?.notes || '').slice(0, 3000),
         status: ['現役', '引退', '旅立ち'].includes(r?.status) ? r.status : '現役',
         ratings: EMOJIS.map((_,i) => Math.max(1, Math.min(10, Number.isFinite(Number(r?.ratings?.[i])) ? Math.round(Number(r.ratings[i])) : 5))),
@@ -429,6 +469,7 @@
       clearTimeout(toastTimer); toastTimer = setTimeout(() => node.classList.remove('shown'), 3400);
     }
     function numberText(num) { return num === null || num === undefined ? '—' : Number(num).toLocaleString('ja-JP', {maximumFractionDigits: 1}); }
+    function weightText(num) { return num === null || num === undefined ? '—' : Number(num).toFixed(2); }
     function statusClass(status) { return status === '旅立ち' ? 'status-departed' : status === '引退' ? 'status-retired' : 'status-active'; }
     function statLabel(i) { return LABELS[i]; }
     function barHTML(score, color) {
@@ -445,7 +486,10 @@
         <div class="card-top"><div><span class="species">${esc(rec.species)}</span>${rec.demo ? '<span class="sample-label">サンプル</span>' : ''}${rank ? `<div><span class="rank-pill">★ 強さ ${rank}位</span></div>` : ''}</div><span class="card-icon" aria-hidden="true"></span></div>
         <h3 class="beetle-name">${esc(name)}</h3>
         <div class="status-row"><span class="size-label">状態</span><span class="status-badge ${statusClass(rec.status)}">${esc(rec.status || '現役')}</span></div>
-        <div class="size-line"><span class="size-label">SIZE</span><span class="size-number">${numberText(rec.size)}</span><span class="size-unit">mm</span></div>
+        <div class="size-line">
+          <div class="measure-item"><span class="size-label">サイズ</span><div class="measure-value"><span class="size-number">${numberText(rec.size)}</span><span class="size-unit">${rec.size === null ? '' : 'mm'}</span></div></div>
+          <div class="measure-item"><span class="size-label">体重</span><div class="measure-value"><span class="size-number weight-number">${weightText(rec.weight)}</span><span class="size-unit">${rec.weight === null ? '' : 'g'}</span></div></div>
+        </div>
         <div class="strength-panel"><div class="strength-head"><span class="strength-title">★ 総合的な強さ</span><span class="strength-value">${s ?? '—'}<small> / 10</small></span></div>${barHTML(s ?? 0, 'strength')}${s === null ? '<div class="stat-subtitle">未設定です。編集から強さを設定できます。</div>' : ''}</div>
         ${statsHTML(rec)}
         <p class="card-note">${esc(notes)}</p>
@@ -492,12 +536,52 @@
       const statusFilter = el('statusFilter').value;
       const list = app.records.filter(r => (!filter || r.species === filter) && (!statusFilter || (r.status || '現役') === statusFilter) && (!term || [r.name,r.species,r.notes].some(x=>x.toLocaleLowerCase('ja').includes(term))));
       const order = el('sort').value;
-      if (order === 'strength') list.sort((a,b)=>(b.strength ?? -1)-(a.strength ?? -1) || (b.size ?? -1)-(a.size ?? -1) || b.createdAt-a.createdAt);
-      else if (order === 'strengthAsc') list.sort((a,b)=>(a.strength ?? 11)-(b.strength ?? 11) || b.createdAt-a.createdAt);
-      else if (order === 'size') list.sort((a,b)=>(b.size ?? -1)-(a.size ?? -1) || b.createdAt-a.createdAt);
-      else if (order === 'rating') list.sort((a,b)=>b.ratings.reduce((s,n)=>s+n,0)-a.ratings.reduce((s,n)=>s+n,0) || b.createdAt-a.createdAt);
-      else if (order === 'name') list.sort((a,b)=>(a.name || a.species).localeCompare(b.name || b.species,'ja'));
-      else list.sort((a,b)=>b.createdAt-a.createdAt);
+      // 「未計測」や空欄は、昇順・降順どちらでも末尾に置きます。
+      const compareNumbers = (aValue, bValue, ascending = false) => {
+        const aMissing = aValue === null || aValue === undefined || !Number.isFinite(aValue);
+        const bMissing = bValue === null || bValue === undefined || !Number.isFinite(bValue);
+        if (aMissing || bMissing) return Number(aMissing) - Number(bMissing);
+        return ascending ? aValue - bValue : bValue - aValue;
+      };
+      const compareText = (aValue, bValue, descending = false) => {
+        const a = String(aValue ?? '').trim();
+        const b = String(bValue ?? '').trim();
+        if (!a || !b) return Number(!a) - Number(!b);
+        return descending ? b.localeCompare(a, 'ja') : a.localeCompare(b, 'ja');
+      };
+      const ratingTotal = r => r.ratings.reduce((sum, value) => sum + value, 0);
+      const statusPosition = r => ({'現役': 0, '引退': 1, '旅立ち': 2})[r.status || '現役'] ?? 3;
+      const tieBreak = (a, b) => b.createdAt - a.createdAt || a.id.localeCompare(b.id);
+      // 元の「強さ順」などの値は維持し、過去の表示設定との互換性を残します。
+      const sorters = {
+        strength: (a,b) => compareNumbers(a.strength, b.strength),
+        strengthAsc: (a,b) => compareNumbers(a.strength, b.strength, true),
+        power: (a,b) => compareNumbers(a.ratings[0], b.ratings[0]),
+        powerAsc: (a,b) => compareNumbers(a.ratings[0], b.ratings[0], true),
+        technique: (a,b) => compareNumbers(a.ratings[1], b.ratings[1]),
+        techniqueAsc: (a,b) => compareNumbers(a.ratings[1], b.ratings[1], true),
+        mental: (a,b) => compareNumbers(a.ratings[2], b.ratings[2]),
+        mentalAsc: (a,b) => compareNumbers(a.ratings[2], b.ratings[2], true),
+        rating: (a,b) => compareNumbers(ratingTotal(a), ratingTotal(b)),
+        ratingAsc: (a,b) => compareNumbers(ratingTotal(a), ratingTotal(b), true),
+        size: (a,b) => compareNumbers(a.size, b.size),
+        sizeAsc: (a,b) => compareNumbers(a.size, b.size, true),
+        weight: (a,b) => compareNumbers(a.weight, b.weight),
+        weightAsc: (a,b) => compareNumbers(a.weight, b.weight, true),
+        name: (a,b) => compareText(a.name, b.name),
+        nameDesc: (a,b) => compareText(a.name, b.name, true),
+        species: (a,b) => compareText(a.species, b.species),
+        speciesDesc: (a,b) => compareText(a.species, b.species, true),
+        status: (a,b) => statusPosition(a) - statusPosition(b),
+        statusDesc: (a,b) => statusPosition(b) - statusPosition(a),
+        notes: (a,b) => compareText(a.notes, b.notes),
+        notesDesc: (a,b) => compareText(a.notes, b.notes, true),
+        newest: (a,b) => compareNumbers(a.createdAt, b.createdAt),
+        oldest: (a,b) => compareNumbers(a.createdAt, b.createdAt, true),
+        updatedNewest: (a,b) => compareNumbers(a.updatedAt, b.updatedAt),
+        updatedOldest: (a,b) => compareNumbers(a.updatedAt, b.updatedAt, true)
+      };
+      list.sort((a,b) => (sorters[order] || sorters.strength)(a,b) || tieBreak(a,b));
       el('resultHint').textContent = list.length + '件を表示';
       let lastStrength = null; let currentRank = 0;
       el('cards').innerHTML = list.map((rec, index) => {
@@ -535,6 +619,7 @@
       el('speciesInput').value = record?.species || '';
       el('nameInput').value = record?.name || '';
       el('sizeInput').value = record?.size ?? '';
+      el('weightInput').value = record?.weight == null ? '' : weightText(record.weight);
       el('statusInput').value = record?.status || '現役';
       el('notesInput').value = record?.notes || '';
       editorRatings(record?.ratings || [5,5,5]);
@@ -551,10 +636,15 @@
       const rawSize = el('sizeInput').value.trim();
       const size = rawSize ? Number(rawSize) : null;
       if (size !== null && (!Number.isFinite(size) || size < 0.1 || size > 999.9)) { el('sizeInput').focus(); toast('サイズを正しく入力してください。'); return; }
+      const rawWeight = el('weightInput').value.trim();
+      const weight = rawWeight ? Number(rawWeight) : null;
+      if (weight !== null && (!/^\d+(?:\.\d{1,2})?$/.test(rawWeight) || !Number.isFinite(weight) || weight > 999.99)) {
+        el('weightInput').focus(); toast('体重は0.01g単位で入力してください。'); return;
+      }
       const previous = app.records.find(r => r.id === editingId);
       const now = Date.now();
       const rec = {
-        id: previous?.id || newId(), species, name: el('nameInput').value.trim(), size,
+        id: previous?.id || newId(), species, name: el('nameInput').value.trim(), size, weight,
         notes: el('notesInput').value.trim(), status: el('statusInput').value, ratings: EMOJIS.map((_,i)=>Number(el('ratingInput'+i).value)),
         strength: Number(el('strengthInput').value),
         createdAt: previous?.createdAt || now, updatedAt: now, demo: false
@@ -575,7 +665,7 @@
     }
     function exportCsv() {
       const csvCell = v => '"' + String(v ?? '').replaceAll('"','""') + '"';
-      const rows = [['トレーナー名','種類','名前','サイズ(mm)','状態','総合的な強さ','パワー','テクニック','メンタル','備考','登録日'], ...app.records.map(r=>[app.trainerName || '',r.species,r.name,r.size??'',r.status || '現役',r.strength ?? '',...r.ratings,r.notes,new Date(r.createdAt).toLocaleDateString('ja-JP')])];
+      const rows = [['トレーナー名','種類','名前','サイズ(mm)','体重(g)','状態','総合的な強さ','パワー','テクニック','メンタル','備考','登録日'], ...app.records.map(r=>[app.trainerName || '',r.species,r.name,r.size??'',r.weight === null ? '' : weightText(r.weight),r.status || '現役',r.strength ?? '',...r.ratings,r.notes,new Date(r.createdAt).toLocaleDateString('ja-JP')])];
       downloadFile('kuwagata-list-' + dateCode() + '.csv', '\uFEFF' + rows.map(row=>row.map(csvCell).join(',')).join('\r\n'), 'text/csv;charset=utf-8');
       toast('CSVファイルを書き出しました。');
     }
@@ -694,7 +784,9 @@
         ctx.fillStyle='#f2f6ef';ctx.font=imgFont(35,800);
         l.name.forEach((line,i)=>ctx.fillText(line,x+30,y+l.nameAt+i*48));
         ctx.fillStyle='#e1e9dc';ctx.font=imgFont(27,600);
-        ctx.fillText(`サイズ：${numberText(r.size)} mm`,x+30,y+l.sizeAt);
+        ctx.fillText(`サイズ：${numberText(r.size)}${r.size === null ? '' : ' mm'}`,x+30,y+l.sizeAt);
+        ctx.fillStyle='#d5edbd';
+        ctx.fillText(`体重：${weightText(r.weight)}${r.weight === null ? '' : 'g'}`,x+515,y+l.sizeAt);
         ctx.font=imgFont(23,800);
         ctx.fillStyle=r.status==='旅立ち'?'#c7c1ea':r.status==='引退'?'#e8d0a1':'#bce99a';
         ctx.fillText(`状態：${r.status || '現役'}`,x+30,y+l.statusAt);
@@ -746,7 +838,7 @@
     }
 
     function addDemo() {
-      app.records.push({id:newId(),species:'オオクワガタ',name:'サンプル個体',size:76.2,status:'現役',notes:'これは画面を試すための架空のサンプルです。強さと能力値も例です。編集・削除できます。',ratings:[8,6,7],strength:9,createdAt:Date.now(),updatedAt:Date.now(),demo:true});
+      app.records.push({id:newId(),species:'オオクワガタ',name:'サンプル個体',size:76.2,weight:2.35,status:'現役',notes:'これは画面を試すための架空のサンプルです。強さと能力値も例です。編集・削除できます。',ratings:[8,6,7],strength:9,createdAt:Date.now(),updatedAt:Date.now(),demo:true});
       const saved=save(); render(); toast(saved ? 'サンプル個体を追加しました。' : '自動保存できません。バックアップしてください。');
     }
 
